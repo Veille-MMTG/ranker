@@ -2,6 +2,7 @@ from pymongo import MongoClient
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from jsonformer.format import highlight_values
 from jsonformer.main import Jsonformer
+import json
 
 import dotenv
 import os
@@ -60,24 +61,15 @@ def rank_articles():
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True, use_cache=True)
     print("Loaded model and tokenizer")
 
-    titles = {
+    jsonFormat = {
         "type": "object",
         "properties": {
-            "articles": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "title": {"type": "string"},
-                        "quality": {"type": "number"},
-                        "relevance": {"type": "number"},
-                    },
-                    "required": ["title", "quality", "relevance"],
-                },
-            }
+                "title": {"type": "string"},
+                "quality": {"type": "number"},
+                "relevance": {"type": "number"},
+            },
+            "required": ["title", "quality", "relevance"],
         },
-        "required": ["articles"],
-    }
 
     while True:
         # Get article from MongoDB
@@ -95,7 +87,7 @@ def rank_articles():
         builder = Jsonformer(
             model=model,
             tokenizer=tokenizer,
-            json_schema=titles,
+            json_schema=jsonFormat,
             prompt=prompt,
             max_string_token_length=20,
         )
@@ -104,8 +96,8 @@ def rank_articles():
         output = builder()
 
         # Extract quality and relevance from the output
-        article_quality = output["articles"][0]["quality"]
-        article_relevance = output["articles"][0]["relevance"]
+        article_quality = output["quality"]
+        article_relevance = output["relevance"]
         
         # Update article in MongoDB with quality and relevance
         update_article_quality_relevance(article_id, article_quality, article_relevance)
