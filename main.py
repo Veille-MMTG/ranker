@@ -41,19 +41,18 @@ def update_article_quality_relevance(article_id, quality, relevance):
     collection.update_one(
         {"_id": article_id}, {"$set": {"quality": quality, "relevance": relevance}}
     )
-    
+
     # check if article was updated
     article = collection.find_one({"_id": article_id})
     print("Updated article: " + article["title"])
     print("Quality: " + str(article["quality"]))
     print("Relevance: " + str(article["relevance"]))
     print("")
-    
-    
 
 
 def rank_articles():
     print("Loading model and tokenizer...")
+    
     model_name = "databricks/dolly-v2-3b"
     model = AutoModelForCausalLM.from_pretrained(
         model_name, use_cache=True, device_map="balanced"
@@ -64,13 +63,13 @@ def rank_articles():
     jsonFormat = {
         "type": "object",
         "properties": {
-                "title": {"type": "string"},
-                "quality": {"type": "number"},
-                "relevance": {"type": "number"},
-            },
-            "required": ["title", "quality", "relevance"],
+            "title": {"type": "string"},
+            "quality": {"type": "number"},
+            "relevance": {"type": "number"},
         },
-
+        "required": ["title", "quality", "relevance"],
+    }
+    
     while True:
         # Get article from MongoDB
         article = get_article()
@@ -98,9 +97,10 @@ def rank_articles():
         # Extract quality and relevance from the output
         article_quality = output["quality"]
         article_relevance = output["relevance"]
-        
+
         # Update article in MongoDB with quality and relevance
         update_article_quality_relevance(article_id, article_quality, article_relevance)
+
 
 def run():
     rank_articles()
